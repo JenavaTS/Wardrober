@@ -1,0 +1,199 @@
+<html>
+<head>
+
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+
+<script>
+    AWS.config.region = 'us-west-2'; // Region
+    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+    IdentityPoolId: 'us-west-2:dc619719-beb9-418d-ba5b-7db577d8cd27',
+});
+
+var docClient = new AWS.DynamoDB.DocumentClient();
+var ItemTags = [{
+    Tag: 'GarmentType', Title: 'Garment Type'}, {
+    Tag: 'PColor', Title: 'Primary Color'}, {
+    Tag: 'Neckline', Title: 'Neckline',}, {
+    Tag: 'SleeveL', Title: 'Sleeve Length'}, {
+    Tag: 'Closure', Title: 'Closure Style'}, {
+    Tag: 'Dress', Title: 'Dress Style'}, {
+    Tag: 'HemL', Title: 'Hem Length'}, {
+    Tag: 'SColor', Title:'Secondary Color(s)'}, {
+    Tag: 'Pattern', Title: 'Pattern'}, {
+    Tag: 'Fabric', Title: 'Fabric'}, {
+    Tag: 'Details', Title: 'Details'}, {
+    Tag: 'GarmentDesc', Title: 'Description'
+    }]
+
+function createItem() {
+    var GarmentType="Dress";
+    var PColor = document.getElementById("PColor").value;
+    var Neckline = document.getElementById("Neckline").value;
+    var SleeveL = document.getElementById("SleeveL").value;
+    var Closure = document.getElementById("Closure").value;
+    var Dress = document.getElementById("Dress").value;
+    var HemL=document.getElementById("HemL").value;
+    var SColor = document.getElementById("SColor").value;
+    var Pattern = document.getElementById("Pattern").value;
+    var Fabric = document.getElementById("Fabric").value;
+    var Details = document.getElementById("Details").value;
+    var GarmentDesc=PColor+" "+SleeveL+" "+Dress+" "+HemL+" "+GarmentType;
+    
+    if (PColor.length==0) {
+        document.getElementById('textarea').innerHTML = "Primary color cannot be blank.  Try again.";
+    } else {
+        if (Dress==="Null" || HemL==="Null" || SleeveL==="Null") {
+            document.getElementById('textarea').innerHTML = "Not all required attributes are entered.  Try again.";
+        } else {
+    //CHANGE THIS:  loop through each var and build params only for values that are populated (length>0)
+    if (Neckline.length==0) Neckline=null
+    if (Closure.length==0) Closure=null
+    if (SColor.length==0) SColor=null
+    if (Pattern.length==0) Pattern=null
+    if (Fabric.length==0) Fabric=null
+    if (Details.length==0) Details=null
+
+    var params = {
+        TableName: "Garments",
+        Item:{
+            "GarmentType": GarmentType,
+            "GarmentDesc": GarmentDesc,
+            "PColor": PColor,
+            "Neckline": Neckline,
+            "SleeveL":  SleeveL,
+            "Closure": Closure,
+            "Dress": Dress,
+            "HemL": HemL,
+            "SColor": SColor,
+            "Pattern": Pattern,
+            "Fabric": Fabric,
+            "Details": Details
+        }
+    };
+    docClient.put(params, function(err, data) {
+        if (err) {
+            document.getElementById('textarea').innerHTML = "Unable to add item: " + "\n" + JSON.stringify(err, undefined, 2);
+        } else {
+            document.getElementById('textarea').innerHTML = "Item saved! " + "\n" + JSON.stringify(data, undefined, 2);
+        }
+    });
+};
+};
+};
+function GetItemList() {
+    var params = {
+        TableName: 'Garments',
+        FilterExpression: 'GarmentType = :GT',
+        ExpressionAttributeValues: {':GT': 'Dress',}
+    };
+    docClient.scan(params, function(err, data) {
+        if (err) document.getElementById('textarea').innerHTML = "Unable to get items: " + "\n" + JSON.stringify(err, undefined, 2);
+        else  
+        console.log(data);
+        //add header row
+        var thead = document.getElementById('ItemsTable').createTHead()
+        var row = thead.insertRow(-1);
+        var cell = row.insertCell(-1);
+        cell.innerHTML = "Select";
+        for (j = 0; j < ItemTags.length; j++) {
+            var cell = row.insertCell(-1);
+            cell.innerHTML = ItemTags[j].Title;
+              }
+        for (i = 0; i < data.Items.length; i++){
+            var row = document.getElementById('ItemsTable').insertRow(-1);
+            var cell = row.insertCell(-1);
+            cell.innerHTML = '<input id="Select"'+i+'" type="checkbox">'
+                for (j = 0; j < ItemTags.length; j++) {
+                    var cell = row.insertCell(-1);
+                    var col = ItemTags[j].Tag;
+                    cell.innerHTML = data.Items[i][col];
+              }
+     }
+    });
+}            
+                   
+</script>
+
+<link href="Warddrobe-NewItem.css" rel="stylesheet" type="text/css">
+</head>
+
+<body onload="GetItemList()">
+
+    <label>Primary Color*<input id="PColor"></label>
+    <label>Neckline
+        <select id="Neckline">
+            <option value=Null></option>
+            <option value="Scoop Neck">Scoop Neck</option>
+            <option value="Boatneck">Boatneck</option>
+            <option value="Crewneck">Crewneck</option>
+            <option value="V-neck">V-neck</option>
+            <option value="Collared">Collared</option>
+            <option value="Collarless/Banded">Collarless/Banded</option>
+            <option value="Turtleneck/Mockneck">Turtleneck/Mockneck</option>
+            <option value="Shawl Collar">Shawl Collar</option>
+            <option value="Off the Shoulder">Off the Shoulder</option>
+            <option value="Stapless">Strapless</option>
+        </select>
+    </label>
+     <label>Sleeve Length*
+         <select id="SleeveL">
+             <option value=Null></option>
+             <option value="Sleeveless">Sleeveless</option>
+             <option value="Short Sleeve">Short Sleeve</option>
+             <option value="Elbow Sleeve">Elbow Sleeve</option>
+             <option value="Bracelet Sleeve">Bracelet Sleeve</option>
+             <option value="Long Sleeve">Long Sleeve</option>
+             <option value="None">None</option>
+         </select>
+    </label>
+    <label>Closure Type
+        <select id="Closure">
+            <option value=Null></option>
+            <option value="Hidden Zip">Hidden Zip</option>
+            <option value="Exposed Zip">Exposed Zip</option>
+            <option value="Buttoned">Buttoned</option>
+            <option value="Pull-on">Pull-on</option>
+            <option value="Wrap">Wrap</option>
+            <option value="None">None</option>
+        </select>
+    </label>
+    <label>Shape*
+        <select id="Dress">
+            <option value=Null></option>
+            <option value="A-line">A-line</option>
+            <option value="Sheath">Sheath</option>
+            <option value="Bodycon">Bodycon</option>
+            <option value="Shift/Sack">Shift/Sack</option>
+            <option value="Trumpet/Mermaid">Trumpet/Mermaid</option>
+            <option value="Swing">Swing</option>
+            <option value="Bias-cut">Bias-cut</option>
+            <option value="Fit-and-Flare">Fit-and-Flare</option>
+            <option value="Caftan">Caftan</option>
+        </select>
+    </label>
+    <label>Hem Length
+        <select id="HemL">
+            <option value=Null></option>
+            <option value="Mid-thigh">Mid-thigh</option>
+            <option value="Above knee">Above Knee</option>
+            <option value="Knee">Knee</option>
+            <option value="Below Knee">Below Knee</option>
+            <option value="Midi">Midi</option>
+            <option value="Ankle">Ankle</option>
+            <option value="Floor">Floor</option>
+        </select>
+    </label>
+    <label>Secondary Color<input id="SColor"></label>
+    <label>Pattern<input id="Pattern"></label>
+    <label>Fabric Desciption<input id="Fabric"></label>
+    <label>Special Details<input id="Details"></label>
+  <br> 
+    <table id="ItemsTable", border=.2>    
+    </table>
+               
+<input id="createItem" type="button" value="Create Item" onclick="createItem();" />
+<br><br>
+<div id= "textarea"></div>
+
+</body>
+</html> 
